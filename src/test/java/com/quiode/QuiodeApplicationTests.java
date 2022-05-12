@@ -1,4 +1,4 @@
-package com.example.quiode;
+package com.quiode;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
