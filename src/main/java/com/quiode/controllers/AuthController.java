@@ -16,6 +16,7 @@ import com.quiode.repositories.RoleRepository;
 import com.quiode.repositories.UserRepository;
 import com.quiode.security.jwt.JwtUtils;
 import com.quiode.security.services.UserDetailsImpl;
+import com.quiode.security.services.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,6 +46,9 @@ public class AuthController {
     PasswordEncoder encoder;
     @Autowired
     JwtUtils jwtUtils;
+    @Autowired
+    EmailService emailService;
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
@@ -106,6 +110,8 @@ public class AuthController {
         }
         user.setRoles(roles);
         userRepository.save(user);
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        emailService.sendMail(user.getEmail(), "Inscription", "Votre inscription a été effectué");
+       return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+
     }
 }
