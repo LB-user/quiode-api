@@ -1,7 +1,13 @@
 package com.quiode.models;
 
+import java.time.Instant;
 import java.util.HashSet;
+
+import org.hibernate.validator.constraints.CreditCardNumber;
+import org.hibernate.validator.constraints.Length;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Set;
@@ -22,8 +28,14 @@ public class User {
     @NotBlank
     @Size(max = 120)
     private String password;
+
+    @Length(min = 6, max = 6)
+    private String verificationCode;
+
+    private boolean isEnabled;
     @DBRef
     private Set<Role> roles = new HashSet<>();
+
     public User() {
     }
     public User(String username, String email, String password) {
@@ -54,6 +66,16 @@ public class User {
     }
     public void setPassword(String password) {
         this.password = password;
+    }
+    public String getVerificationCode() {
+        return verificationCode;
+    }
+    public void setVerificationCode(String verificationCode) {
+        this.verificationCode = verificationCode;
+    }
+    public boolean getIsEnabled() { return isEnabled; }
+    public void setIsEnabled(boolean isEnabled) {
+        this.isEnabled = isEnabled;
     }
     public Set<Role> getRoles() {
         return roles;

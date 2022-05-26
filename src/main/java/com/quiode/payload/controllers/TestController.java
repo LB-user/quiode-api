@@ -1,4 +1,4 @@
-package com.quiode.controllers;
+package com.quiode.payload.controllers;
 
 import com.quiode.models.User;
 import com.quiode.repositories.UserRepository;

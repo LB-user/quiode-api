@@ -1,9 +1,11 @@
-package com.quiode.controllers;
+package com.quiode.payload.controllers;
 
 import java.util.HashSet;
+import java.util.Random;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 
 import com.quiode.models.Role;
@@ -15,8 +17,8 @@ import com.quiode.payload.response.MessageResponse;
 import com.quiode.repositories.RoleRepository;
 import com.quiode.repositories.UserRepository;
 import com.quiode.security.jwt.JwtUtils;
-import com.quiode.security.services.UserDetailsImpl;
 import com.quiode.security.services.EmailService;
+import com.quiode.security.services.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
 import com.quiode.models.ERole;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -67,7 +70,7 @@ public class AuthController {
                 roles));
     }
     @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) throws MessagingException {
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             return ResponseEntity
                     .badRequest()
@@ -109,9 +112,11 @@ public class AuthController {
             });
         }
         user.setRoles(roles);
+        String randomCode = "123456";
+        user.setVerificationCode(randomCode);
         userRepository.save(user);
-        emailService.sendMail(user.getEmail(), "Inscription", "Votre inscription a été effectué");
-       return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        emailService.sendRegisterMail(user);
+        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
 
     }
 }
