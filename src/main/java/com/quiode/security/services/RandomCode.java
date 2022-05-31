@@ -8,6 +8,7 @@ public class RandomCode {
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++)
             sb.append(chars.charAt(rnd.nextInt(chars.length())));
+
         return sb.toString();
     }
 }
