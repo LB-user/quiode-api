@@ -1,7 +1,7 @@
 package com.quiode.payload.controllers;
 
 import java.util.HashSet;
-import java.util.Random;
+
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,6 +34,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.quiode.models.ERole;
+
+import static com.quiode.security.services.RandomCode.generateRandomPassword;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -112,7 +114,7 @@ public class AuthController {
             });
         }
         user.setRoles(roles);
-        String randomCode = "123456";
+        String randomCode = generateRandomPassword(6);
         user.setVerificationCode(randomCode);
         userRepository.save(user);
         emailService.sendRegisterMail(user);
