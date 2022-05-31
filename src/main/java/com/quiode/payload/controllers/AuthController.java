@@ -115,10 +115,10 @@ public class AuthController {
         }
         user.setRoles(roles);
         String randomCode = generateRandomPassword(6);
-        user.setVerificationCode(randomCode);
+        user.setVerificationCode(encoder.encode("123456"));
+        // user.setVerificationCode(encoder.encode(randomCode));
         userRepository.save(user);
         emailService.sendRegisterMail(user);
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
-
     }
 }
