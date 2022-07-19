@@ -10,6 +10,7 @@ import javax.validation.Valid;
 
 import com.quiode.models.Role;
 import com.quiode.models.User;
+import com.quiode.payload.request.ForgotPasswordRequest;
 import com.quiode.payload.request.LoginRequest;
 import com.quiode.payload.request.SignupRequest;
 import com.quiode.payload.response.JwtResponse;
@@ -19,6 +20,7 @@ import com.quiode.repositories.UserRepository;
 import com.quiode.security.jwt.JwtUtils;
 import com.quiode.security.services.EmailService;
 import com.quiode.security.services.UserDetailsImpl;
+import com.quiode.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,7 +39,10 @@ import com.quiode.models.ERole;
 
 import static com.quiode.security.services.RandomCode.generateRandomPassword;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+// @CrossOrigin(origins = "*", maxAge = 3600)
+// @CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
+
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600, allowCredentials="true")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -47,6 +52,10 @@ public class AuthController {
     UserRepository userRepository;
     @Autowired
     RoleRepository roleRepository;
+
+    @Autowired
+    UserDetailsServiceImpl userDetailsService;
+
     @Autowired
     PasswordEncoder encoder;
     @Autowired
@@ -120,5 +129,10 @@ public class AuthController {
         userRepository.save(user);
         emailService.sendRegisterMail(user);
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    }
+    @PostMapping("/forgot_password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
+        User user = (User) userDetailsService.loadUserByUsername(forgotPasswordRequest.getUsername());
+        return ResponseEntity.ok(new MessageResponse("Hello, " + user));
     }
 }
