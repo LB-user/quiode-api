@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import com.mongodb.lang.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,15 +19,18 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
     @JsonIgnore
+    private String resetToken;
+    @JsonIgnore
     private String verificationCode;
     private boolean isEnabled;
     private Collection<? extends GrantedAuthority> authorities;
-    public UserDetailsImpl(String id, String username, String email, String password, String verificationCode, boolean isEnabled,
+    public UserDetailsImpl(String id, String username, String email, String password, String verificationCode, String resetToken, boolean isEnabled,
                            Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.password = password;
+        this.resetToken = resetToken;
         this.verificationCode = verificationCode;
         this.isEnabled = isEnabled;
         this.authorities = authorities;
@@ -40,6 +45,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getEmail(),
                 user.getPassword(),
                 user.getVerificationCode(),
+                user.getResetToken(),
                 user.getIsEnabled(),
                 authorities);
     }
@@ -53,11 +59,12 @@ public class UserDetailsImpl implements UserDetails {
     public String getEmail() {
         return email;
     }
-    public String getVerificationCode() { return verificationCode; }
     @Override
     public String getPassword() {
         return password;
     }
+    public String getResetToken() { return resetToken; }
+    public String getVerificationCode() { return verificationCode; }
     @Override
     public String getUsername() {
         return username;

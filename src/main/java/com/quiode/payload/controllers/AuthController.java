@@ -1,17 +1,22 @@
 package com.quiode.payload.controllers;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.mail.MessagingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import javax.validation.constraints.Null;
 
+import com.mongodb.lang.Nullable;
 import com.quiode.models.Role;
 import com.quiode.models.User;
 import com.quiode.payload.request.ForgotPasswordRequest;
 import com.quiode.payload.request.LoginRequest;
+import com.quiode.payload.request.ResetPasswordRequest;
 import com.quiode.payload.request.SignupRequest;
 import com.quiode.payload.response.JwtResponse;
 import com.quiode.payload.response.MessageResponse;
@@ -19,24 +24,24 @@ import com.quiode.repositories.RoleRepository;
 import com.quiode.repositories.UserRepository;
 import com.quiode.security.jwt.JwtUtils;
 import com.quiode.security.services.EmailService;
+import com.quiode.security.services.RandomPassword;
 import com.quiode.security.services.UserDetailsImpl;
 import com.quiode.security.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.quiode.models.ERole;
 
+import static ch.qos.logback.core.joran.action.ActionConst.NULL;
 import static com.quiode.security.services.RandomCode.generateRandomPassword;
 
 // @CrossOrigin(origins = "*", maxAge = 3600)
@@ -124,15 +129,64 @@ public class AuthController {
         }
         user.setRoles(roles);
         String randomCode = generateRandomPassword(6);
-        user.setVerificationCode(encoder.encode("123456"));
-        // user.setVerificationCode(encoder.encode(randomCode));
+        user.setResetToken("");
+        // user.setVerificationCode(encoder.encode("123456"));
+        user.setVerificationCode(encoder.encode(randomCode));
         userRepository.save(user);
-        emailService.sendRegisterMail(user);
+        emailService.sendRegisterMail(user, randomCode);
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
-    @PostMapping("/forgot_password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest) {
-        User user = (User) userDetailsService.loadUserByUsername(forgotPasswordRequest.getUsername());
-        return ResponseEntity.ok(new MessageResponse("Hello, " + user));
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest forgotPasswordRequest)  throws MessagingException {
+        if (userRepository.existsByUsername(forgotPasswordRequest.getUsername())) {
+            User user = userRepository.findByUsername(forgotPasswordRequest.getUsername());
+            String token = RandomPassword.getPassword(30);
+
+            user.setResetToken(token);
+            emailService.sendForgotPasswordMail(user, token);
+
+            return ResponseEntity.ok(new MessageResponse("Un email vous à été envoyé!"));
+        }
+        if (userRepository.existsByEmail(forgotPasswordRequest.getUsername())) {
+            User user = userRepository.findByEmail(forgotPasswordRequest.getUsername());
+            String token = RandomPassword.getPassword(30);
+
+            user.setResetToken(token);
+            emailService.sendForgotPasswordMail(user, token);
+
+            return ResponseEntity.ok(new MessageResponse("Un email vous à été envoyé!"));
+
+        }
+        return ResponseEntity
+                .badRequest()
+                .body(new MessageResponse("Error: Cet utilisateur n'existe pas!"));
+    }
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> showResetPasswordForm(@Valid @RequestBody ResetPasswordRequest resetPasswordRequest) {
+        User user = userRepository.findByResetToken(resetPasswordRequest.getResetToken());
+        String newPassword = resetPasswordRequest.getPassword();
+        String newConfirmPassword = resetPasswordRequest.getConfirmPassword();
+        if (newPassword.equals(newConfirmPassword)) {
+            user.setPassword(encoder.encode(resetPasswordRequest.getPassword()));
+            user.setResetToken("");
+
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), resetPasswordRequest.getPassword()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String jwt = jwtUtils.generateJwtToken(authentication);
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(new JwtResponse(jwt,
+                    userDetails.getId(),
+                    userDetails.getUsername(),
+                    userDetails.getEmail(),
+                    roles));
+        }
+        return ResponseEntity
+                .badRequest()
+                .body(new MessageResponse("Error: le mot de passe et la confirmation doivent être identique!"));
     }
 }

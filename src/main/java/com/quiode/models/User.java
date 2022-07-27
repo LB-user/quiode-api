@@ -3,6 +3,7 @@ package com.quiode.models;
 import java.time.Instant;
 import java.util.HashSet;
 
+import com.mongodb.lang.Nullable;
 import org.hibernate.validator.constraints.CreditCardNumber;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.data.annotation.CreatedDate;
@@ -28,16 +29,14 @@ public class User {
     @NotBlank
     @Size(max = 120)
     private String password;
-
+    private String resetToken;
     @Length(min = 6, max = 6)
     private String verificationCode;
-
+    @NotBlank
     private boolean isEnabled;
     @DBRef
     private Set<Role> roles = new HashSet<>();
 
-    public User() {
-    }
     public User(String username, String email, String password) {
         this.username = username;
         this.email = email;
@@ -66,6 +65,12 @@ public class User {
     }
     public void setPassword(String password) {
         this.password = password;
+    }
+    public String getResetToken() {
+        return resetToken;
+    }
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
     }
     public String getVerificationCode() {
         return verificationCode;
